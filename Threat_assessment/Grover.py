@@ -3,7 +3,8 @@ import time
 import matplotlib.pyplot as plt
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
-
+import csv 
+import os
 
 def grover_circuit(n: int, target_state: str, num_iterations: int = None) -> QuantumCircuit:
     if len(target_state) != n:
@@ -70,9 +71,13 @@ def run_grover(n: int, target_state: str, shots: int = 1024) -> dict:
     elapsed = time.time() - t0
 
     counts = result.get_counts()
+    success_prob =max(counts.values()) / shots
     print(f"Simulation time: {elapsed:.3f}s")
     print(f"Top result: {max(counts, key=counts.get)} "
-          f"({max(counts.values()) / shots * 100:.1f}% of shots)")
+      f"({success_prob * 100:.1f}% of shots)")
+    depth=qc.depth()
+    gate_count=sum(qc.count_ops().values())
+    log_experiment(n,num_iterations, elapsed, success_prob, depth, gate_count)
     return counts
 
 
@@ -99,10 +104,41 @@ def plot_results(counts: dict, target_state: str, n: int) -> None:
     plt.savefig("grover_results.png", dpi=150)
     plt.show()
 
+def log_experiment(n, iterations, runtime, success_prob, depth, gate_count,
+                   filename="grover_scaling_data.csv"):
+
+    file_exists = os.path.isfile(filename)
+
+    with open(filename, mode="a", newline="") as file:
+        writer = csv.writer(file)
+
+        if not file_exists:
+            writer.writerow([
+                "Qubits",
+                "Iterations",
+                "Runtime_seconds",
+                "Success_probability",
+                "Circuit_depth",
+                "Gate_count"
+            ])
+
+        writer.writerow([
+            n,
+            iterations,
+            runtime,
+            success_prob,
+            depth,
+            gate_count
+        ])    
+
 
 if __name__ == "__main__":
-    N_QUBITS = 4
-    TARGET = "1011"
-
-    counts = run_grover(N_QUBITS, TARGET)
-    plot_results(counts, TARGET, N_QUBITS)
+    print("Starting scaling test...\n")
+    for n in [10,12,14,16,18,20]:   # test up to 20 qubits..(my device limit is upto 20 qubits)
+        try:
+            TARGET = "1" * n
+            counts = run_grover(n, TARGET)
+            print("-" * 50)
+        except Exception as e:
+            print(f"Failed at n={n} with error: {e}")
+            break

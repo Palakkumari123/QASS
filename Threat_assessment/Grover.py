@@ -1,10 +1,12 @@
 import numpy as np
 import time
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
-import csv 
+import csv
 import os
+
 
 def grover_circuit(n: int, target_state: str, num_iterations: int = None) -> QuantumCircuit:
     if len(target_state) != n:
@@ -16,8 +18,7 @@ def grover_circuit(n: int, target_state: str, num_iterations: int = None) -> Qua
     target_le = target_state[::-1]
 
     qc = QuantumCircuit(n)
-
-    qc.h(range(n))   #initialization(put the qubits in superposition)
+    qc.h(range(n))
 
     for _ in range(num_iterations):
         _apply_oracle(qc, n, target_le)
@@ -27,7 +28,7 @@ def grover_circuit(n: int, target_state: str, num_iterations: int = None) -> Qua
     return qc
 
 
-def _apply_oracle(qc: QuantumCircuit, n: int, target_le: str) -> None: 
+def _apply_oracle(qc: QuantumCircuit, n: int, target_le: str) -> None:
     for i, bit in enumerate(target_le):
         if bit == '0':
             qc.x(i)
@@ -43,7 +44,7 @@ def _apply_oracle(qc: QuantumCircuit, n: int, target_le: str) -> None:
     qc.barrier()
 
 
-def _apply_diffusion(qc: QuantumCircuit, n: int) -> None:  # Diffusion operator (inversion about the mean)
+def _apply_diffusion(qc: QuantumCircuit, n: int) -> None:
     qc.h(range(n))
     qc.x(range(n))
 
@@ -71,13 +72,14 @@ def run_grover(n: int, target_state: str, shots: int = 1024) -> dict:
     elapsed = time.time() - t0
 
     counts = result.get_counts()
-    success_prob =max(counts.values()) / shots
+    success_prob = max(counts.values()) / shots
     print(f"Simulation time: {elapsed:.3f}s")
     print(f"Top result: {max(counts, key=counts.get)} "
-      f"({success_prob * 100:.1f}% of shots)")
-    depth=qc.depth()
-    gate_count=sum(qc.count_ops().values())
-    log_experiment(n,num_iterations, elapsed, success_prob, depth, gate_count)
+          f"({success_prob * 100:.1f}% of shots)")
+
+    depth = compiled.depth()
+    gate_count = sum(compiled.count_ops().values())
+    log_experiment(n, num_iterations, elapsed, success_prob, depth, gate_count)
     return counts
 
 
@@ -88,25 +90,22 @@ def plot_results(counts: dict, target_state: str, n: int) -> None:
     colors = ['#e74c3c' if lbl == target_state else '#3498db' for lbl in labels]
 
     plt.figure(figsize=(10, 5))
-    bars = plt.bar(labels, values, color=colors)
+    plt.bar(labels, values, color=colors)
     plt.xlabel("Measured State")
     plt.ylabel("Counts")
     plt.title(f"Grover's Algorithm | n={n} qubits | target=|{target_state}⟩")
     plt.xticks(rotation=45, ha='right')
-
-    from matplotlib.patches import Patch
     plt.legend(handles=[
         Patch(color='#e74c3c', label='Target state'),
         Patch(color='#3498db', label='Other states'),
     ])
-
     plt.tight_layout()
     plt.savefig("grover_results.png", dpi=150)
     plt.show()
 
+
 def log_experiment(n, iterations, runtime, success_prob, depth, gate_count,
                    filename="grover_scaling_data.csv"):
-
     file_exists = os.path.isfile(filename)
 
     with open(filename, mode="a", newline="") as file:
@@ -122,19 +121,12 @@ def log_experiment(n, iterations, runtime, success_prob, depth, gate_count,
                 "Gate_count"
             ])
 
-        writer.writerow([
-            n,
-            iterations,
-            runtime,
-            success_prob,
-            depth,
-            gate_count
-        ])    
+        writer.writerow([n, iterations, runtime, success_prob, depth, gate_count])
 
 
 if __name__ == "__main__":
     print("Starting scaling test...\n")
-    for n in [10,12,14,16,18,20]:   # test up to 20 qubits..(my device limit is upto 20 qubits)
+    for n in [4,6,8,10, 12, 14, 16, 18, 20]:
         try:
             TARGET = "1" * n
             counts = run_grover(n, TARGET)

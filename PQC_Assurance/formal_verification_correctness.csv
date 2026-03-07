@@ -1,0 +1,4 @@
+Algorithm,Runs,Passed,Failed,Pass_Rate,Functionally_Correct
+Kyber512,1000,1000,0,100.0,True
+Kyber768,1000,1000,0,100.0,True
+Kyber1024,1000,1000,0,100.0,True

@@ -3,11 +3,53 @@ import time
 import csv
 import os
 import math
+import sys
+from pathlib import Path
 from typing import Optional
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
 from qiskit.circuit.library import QFT, UnitaryGate
 from fractions import Fraction
+
+ROOT_DIR = Path(__file__).resolve().parents[2]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.append(str(ROOT_DIR))
+
+from project_config import DATA_FILES, SHOR_TEST_CASES
+from project_config import (
+    DETERMINISTIC_MODE,
+    GLOBAL_SEED,
+    SHOR_DEFAULT_SHOTS,
+    SHOR_SIMULATOR_SEED,
+    SHOR_TRANSPILE_SEED,
+)
+
+
+def _is_nontrivial_composite(n: int) -> bool:
+    if n <= 3:
+        return False
+    if n % 2 == 0:
+        return True
+    limit = int(math.sqrt(n)) + 1
+    for i in range(3, limit, 2):
+        if n % i == 0:
+            return True
+    return False
+
+
+def _validate_shor_inputs(n: int, a: int, shots: int) -> None:
+    if n <= 2:
+        raise ValueError("n must be > 2")
+    if n % 2 == 0:
+        raise ValueError("n must be odd for this simplified Shor setup")
+    if not _is_nontrivial_composite(n):
+        raise ValueError("n must be composite (not prime)")
+    if not (2 <= a < n):
+        raise ValueError("a must satisfy 2 <= a < n")
+    if math.gcd(a, n) != 1:
+        raise ValueError("a and n must be coprime (gcd(a, n) == 1)")
+    if shots <= 0:
+        raise ValueError("shots must be > 0")
 
 
 def build_mod_unitary(a: int, n: int, n_bits: int) -> np.ndarray:
@@ -77,12 +119,17 @@ def attempt_factor(n: int, a: int, r: Optional[int]) -> Optional[tuple]:
     return (p, q) if p not in (1, n) and q not in (1, n) else None
 
 
-def run_shors(n: int, a: int = None, shots: int = 4096) -> dict:
+def run_shors(n: int, a: int = None, shots: int = SHOR_DEFAULT_SHOTS) -> dict:
     if a is None:
         for candidate in range(2, n):
             if math.gcd(candidate, n) == 1:
                 a = candidate
                 break
+
+    if a is None:
+        raise ValueError("could not find a valid coprime base 'a' for the given n")
+
+    _validate_shor_inputs(n, a, shots)
 
     print(f"Factoring N={n} with base a={a}")
 
@@ -91,8 +138,14 @@ def run_shors(n: int, a: int = None, shots: int = 4096) -> dict:
 
     simulator = AerSimulator()
     t0 = time.time()
-    compiled = transpile(qc, simulator, optimization_level=1)
-    job = simulator.run(compiled, shots=shots)
+    transpile_kwargs = {"optimization_level": 1}
+    run_kwargs = {"shots": shots}
+    if DETERMINISTIC_MODE:
+        transpile_kwargs["seed_transpiler"] = GLOBAL_SEED + SHOR_TRANSPILE_SEED
+        run_kwargs["seed_simulator"] = GLOBAL_SEED + SHOR_SIMULATOR_SEED
+
+    compiled = transpile(qc, simulator, **transpile_kwargs)
+    job = simulator.run(compiled, **run_kwargs)
     result = job.result()
     elapsed = time.time() - t0
 
@@ -126,7 +179,7 @@ def run_shors(n: int, a: int = None, shots: int = 4096) -> dict:
 
 
 def log_experiment(n, a, period, factors, runtime, success, depth, gate_count,
-                   filename="shors_scaling_data.csv"):
+                   filename=DATA_FILES["shor_scaling"]):
     file_exists = os.path.isfile(filename)
     with open(filename, mode="a", newline="") as file:
         writer = csv.writer(file)
@@ -140,11 +193,8 @@ def log_experiment(n, a, period, factors, runtime, success, depth, gate_count,
 
 if __name__ == "__main__":
     print("Starting Shor's algorithm scaling test...\n")
-    test_cases = [
-        (15, 7),
-        (21, 2),
-        (35, 3),
-    ]
+    print(f"Deterministic mode: {DETERMINISTIC_MODE}")
+    test_cases = SHOR_TEST_CASES
 
     for n, a in test_cases:
         try:

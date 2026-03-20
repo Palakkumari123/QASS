@@ -1,8 +1,20 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
+from pathlib import Path
 
-filename = "pqc_benchmark_data.csv"
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.append(str(ROOT_DIR))
+
+from project_config import DATA_FILES
+
+
+filename = DATA_FILES["pqc_benchmark"]
+if not Path(filename).is_file() and Path("kyber_bench_data.csv").is_file():
+    filename = "kyber_bench_data.csv"
+
 data = pd.read_csv(filename)
 data = data.dropna()
 

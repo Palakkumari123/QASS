@@ -2,15 +2,45 @@ import numpy as np
 import time
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
+import sys
+from pathlib import Path
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import AerSimulator
 import csv
 import os
 
+ROOT_DIR = Path(__file__).resolve().parents[2]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.append(str(ROOT_DIR))
 
-def grover_circuit(n: int, target_state: str, num_iterations: int = None) -> QuantumCircuit:
+from project_config import (
+    DATA_FILES,
+    DETERMINISTIC_MODE,
+    GLOBAL_SEED,
+    GROVER_DEFAULT_SHOTS,
+    GROVER_MAX_QUBITS,
+    GROVER_MIN_QUBITS,
+    GROVER_QUBIT_SIZES,
+    GROVER_SIMULATOR_SEED,
+    GROVER_TRANSPILE_SEED,
+)
+
+
+def _validate_grover_inputs(n: int, target_state: str, shots: int) -> None:
+    if n < GROVER_MIN_QUBITS:
+        raise ValueError(f"n must be >= {GROVER_MIN_QUBITS}")
+    if n > GROVER_MAX_QUBITS:
+        raise ValueError(f"n must be <= {GROVER_MAX_QUBITS} to avoid simulator blowup")
     if len(target_state) != n:
         raise ValueError(f"target_state length {len(target_state)} must equal n={n}")
+    if set(target_state) - {"0", "1"}:
+        raise ValueError("target_state must contain only '0' and '1'")
+    if shots <= 0:
+        raise ValueError("shots must be > 0")
+
+
+def grover_circuit(n: int, target_state: str, num_iterations: int = None) -> QuantumCircuit:
+    _validate_grover_inputs(n, target_state, GROVER_DEFAULT_SHOTS)
 
     if num_iterations is None:
         num_iterations = max(1, round((np.pi / 4) * np.sqrt(2 ** n)))
@@ -58,7 +88,9 @@ def _apply_diffusion(qc: QuantumCircuit, n: int) -> None:
     qc.barrier()
 
 
-def run_grover(n: int, target_state: str, shots: int = 1024) -> dict:
+def run_grover(n: int, target_state: str, shots: int = GROVER_DEFAULT_SHOTS) -> dict:
+    _validate_grover_inputs(n, target_state, shots)
+
     num_iterations = max(1, round((np.pi / 4) * np.sqrt(2 ** n)))
     print(f"Qubits: {n} | Target: {target_state} | Iterations: {num_iterations}")
 
@@ -66,8 +98,14 @@ def run_grover(n: int, target_state: str, shots: int = 1024) -> dict:
 
     simulator = AerSimulator()
     t0 = time.time()
-    compiled = transpile(qc, simulator)
-    job = simulator.run(compiled, shots=shots)
+    transpile_kwargs = {}
+    run_kwargs = {"shots": shots}
+    if DETERMINISTIC_MODE:
+        transpile_kwargs["seed_transpiler"] = GLOBAL_SEED + GROVER_TRANSPILE_SEED
+        run_kwargs["seed_simulator"] = GLOBAL_SEED + GROVER_SIMULATOR_SEED
+
+    compiled = transpile(qc, simulator, **transpile_kwargs)
+    job = simulator.run(compiled, **run_kwargs)
     result = job.result()
     elapsed = time.time() - t0
 
@@ -105,7 +143,7 @@ def plot_results(counts: dict, target_state: str, n: int) -> None:
 
 
 def log_experiment(n, iterations, runtime, success_prob, depth, gate_count,
-                   filename="grover_scaling_data.csv"):
+                   filename=DATA_FILES["grover_scaling"]):
     file_exists = os.path.isfile(filename)
 
     with open(filename, mode="a", newline="") as file:
@@ -126,7 +164,8 @@ def log_experiment(n, iterations, runtime, success_prob, depth, gate_count,
 
 if __name__ == "__main__":
     print("Starting scaling test...\n")
-    for n in [4,6,8,10, 12, 14, 16, 18, 20]:
+    print(f"Deterministic mode: {DETERMINISTIC_MODE}")
+    for n in GROVER_QUBIT_SIZES:
         try:
             TARGET = "1" * n
             counts = run_grover(n, TARGET)

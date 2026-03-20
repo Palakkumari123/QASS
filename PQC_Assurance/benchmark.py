@@ -3,12 +3,21 @@ import csv
 import os
 import statistics
 import numpy as np
+import sys
+from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 from kyber_py.kyber import Kyber512, Kyber768, Kyber1024
 # functional correctness test and constant-time analysis.
 
-RUNS = 1000
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.append(str(ROOT_DIR))
+
+from project_config import DATA_FILES, KYBER_VERIFICATION_RUNS
+
+
+RUNS = KYBER_VERIFICATION_RUNS
 VARIANTS = {
     "Kyber512": Kyber512,
     "Kyber768": Kyber768,
@@ -81,7 +90,7 @@ def verify_constant_time(name: str, variant) -> dict:
     }
 
 
-def log_correctness_results(results: list, filename="formal_verification_correctness.csv"):
+def log_correctness_results(results: list, filename=DATA_FILES["fv_correctness"]):
     file_exists = os.path.isfile(filename)
     with open(filename, mode="a", newline="") as f:
         writer = csv.writer(f)
@@ -97,7 +106,7 @@ def log_correctness_results(results: list, filename="formal_verification_correct
             ])
 
 
-def log_timing_results(results: list, filename="formal_verification_timing.csv"):
+def log_timing_results(results: list, filename=DATA_FILES["fv_timing"]):
     file_exists = os.path.isfile(filename)
     with open(filename, mode="a", newline="") as f:
         writer = csv.writer(f)

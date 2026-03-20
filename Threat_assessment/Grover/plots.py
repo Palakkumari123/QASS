@@ -1,8 +1,17 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
+from pathlib import Path
 
-filename = "grover_scaling_data.csv"
+ROOT_DIR = Path(__file__).resolve().parents[2]
+if str(ROOT_DIR) not in sys.path:
+	sys.path.append(str(ROOT_DIR))
+
+from project_config import DATA_FILES
+
+
+filename = DATA_FILES["grover_scaling"]
 data = pd.read_csv(filename)
 data = data.dropna()
 data = data.sort_values("Qubits")

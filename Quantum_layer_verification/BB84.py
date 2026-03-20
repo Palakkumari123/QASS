@@ -1,25 +1,56 @@
 import numpy as np
 import csv
 import os
+import sys
+from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.append(str(ROOT_DIR))
 
-NUM_BITS = 10000
-NOISE_RATE = 0.01
-DISTANCES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-ATTENUATION = 0.2
+from project_config import (
+    BB84_ATTENUATION_DB_PER_KM,
+    BB84_DISTANCES_KM,
+    BB84_NOISE_RATE,
+    BB84_NUM_BITS,
+    BB84_RANDOM_SOURCE,
+    BB84_SEED,
+    DATA_FILES,
+    DETERMINISTIC_MODE,
+    GLOBAL_SEED,
+)
+
+
+NUM_BITS = BB84_NUM_BITS
+NOISE_RATE = BB84_NOISE_RATE
+DISTANCES = list(BB84_DISTANCES_KM)
+ATTENUATION = BB84_ATTENUATION_DB_PER_KM
 
 
 def photon_survival_prob(distance_km: float, attenuation_db_per_km: float = ATTENUATION) -> float:
     return 10 ** (-attenuation_db_per_km * distance_km / 10)
 
 
-def bb84_simulate(num_bits: int, distance_km: float, noise_rate: float,
-                  eavesdrop: bool = False) -> dict:
+def _generate_bits(num_bits: int, random_source: str) -> np.ndarray:
+    source = random_source.strip().lower()
+    if source == "classical":
+        return np.random.randint(0, 2, num_bits)
+    if source == "qrng":
+        try:
+            from QRNG import quantum_rng
+        except ImportError:
+            from Quantum_layer_verification.QRNG import quantum_rng
+        return quantum_rng(num_bits)
+    raise ValueError("random_source must be 'classical' or 'qrng'")
 
-    alice_bits = np.random.randint(0, 2, num_bits)
-    alice_bases = np.random.randint(0, 2, num_bits)
+
+def bb84_simulate(num_bits: int, distance_km: float, noise_rate: float,
+                  eavesdrop: bool = False, random_source: str = BB84_RANDOM_SOURCE) -> dict:
+
+    alice_bits = _generate_bits(num_bits, random_source)
+    alice_bases = _generate_bits(num_bits, random_source)
 
     survival_prob = photon_survival_prob(distance_km)
     survived = np.random.random(num_bits) < survival_prob
@@ -39,7 +70,7 @@ def bb84_simulate(num_bits: int, distance_km: float, noise_rate: float,
     
     transmitted_bases = alice_bases_recv
 
-    bob_bases = np.random.randint(0, 2, num_survived)
+    bob_bases = _generate_bits(num_survived, random_source)
     bob_bits = transmitted_bits.copy()
 
     noise_mask = np.random.random(num_survived) < noise_rate
@@ -74,7 +105,7 @@ def bb84_simulate(num_bits: int, distance_km: float, noise_rate: float,
     }
 
 
-def log_results(results: list, filename="bb84_simulation_data.csv"):
+def log_results(results: list, filename=DATA_FILES["bb84"]):
     file_exists = os.path.isfile(filename)
     with open(filename, mode="a", newline="") as f:
         writer = csv.writer(f)
@@ -175,7 +206,10 @@ def plot_sifted_key_length(results_no_eve: list):
 
 if __name__ == "__main__":
     print("Running BB84 QKD Simulation...\n")
-    np.random.seed(42)
+    seed = GLOBAL_SEED + BB84_SEED
+    np.random.seed(seed if DETERMINISTIC_MODE else None)
+    print(f"Deterministic mode: {DETERMINISTIC_MODE}")
+    print(f"BB84 random source: {BB84_RANDOM_SOURCE}")
 
     results_no_eve = []
     results_eve = []
@@ -184,8 +218,8 @@ if __name__ == "__main__":
     print("-" * 65)
 
     for dist in DISTANCES:
-        r_no_eve = bb84_simulate(NUM_BITS, dist, NOISE_RATE, eavesdrop=False)
-        r_eve = bb84_simulate(NUM_BITS, dist, NOISE_RATE, eavesdrop=True)
+        r_no_eve = bb84_simulate(NUM_BITS, dist, NOISE_RATE, eavesdrop=False, random_source=BB84_RANDOM_SOURCE)
+        r_eve = bb84_simulate(NUM_BITS, dist, NOISE_RATE, eavesdrop=True, random_source=BB84_RANDOM_SOURCE)
         results_no_eve.append(r_no_eve)
         results_eve.append(r_eve)
         print(f"{dist:<12} {r_no_eve['qber']*100:<18.2f} {r_eve['qber']*100:<15.2f} "

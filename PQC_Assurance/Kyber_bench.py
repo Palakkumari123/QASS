@@ -2,6 +2,8 @@ import time
 import csv
 import os
 import statistics
+import sys
+from pathlib import Path
 from cryptography.hazmat.primitives.asymmetric import rsa, ec, padding
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.backends import default_backend
@@ -9,7 +11,14 @@ from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from kyber_py.kyber import Kyber512, Kyber768, Kyber1024
 
-RUNS = 100
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.append(str(ROOT_DIR))
+
+from project_config import DATA_FILES, PQC_BENCHMARK_RUNS
+
+
+RUNS = PQC_BENCHMARK_RUNS
 MESSAGE = b"benchmark message for encryption test"
 
 
@@ -157,7 +166,7 @@ def benchmark_kyber(variant) -> dict:
     }
 
 
-def log_results(results: list, filename="pqc_benchmark_data.csv"):
+def log_results(results: list, filename=DATA_FILES["pqc_benchmark"]):
     file_exists = os.path.isfile(filename)
     with open(filename, mode="a", newline="") as f:
         writer = csv.writer(f)

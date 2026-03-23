@@ -1,0 +1,8 @@
+session_id,seed,raw_bitstring,combination_id,selected_sources,selector_duration_ms,attempts,transpiled_depth,transpiled_ops
+coverage_5,5,001,0,qkd,72.68831400051567,1,4,"{'h': 3, 'measure': 3, 'cx': 2}"
+coverage_11,11,010,1,kyber,70.66015000054904,1,4,"{'h': 3, 'measure': 3, 'cx': 2}"
+coverage_7,7,011,2,qrng,71.67564300016238,1,4,"{'h': 3, 'measure': 3, 'cx': 2}"
+coverage_23,23,100,3,qkd+kyber,71.10090100013622,1,4,"{'h': 3, 'measure': 3, 'cx': 2}"
+coverage_3,3,101,4,qkd+qrng,71.4024420003625,1,4,"{'h': 3, 'measure': 3, 'cx': 2}"
+coverage_8,8,110,5,kyber+qrng,71.30952599982265,1,4,"{'h': 3, 'measure': 3, 'cx': 2}"
+coverage_1,2,111,6,qkd+kyber+qrng,389.9536500002796,2,4,"{'h': 3, 'measure': 3, 'cx': 2}"

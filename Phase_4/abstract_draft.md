@@ -1,0 +1,9 @@
+# Abstract (Draft)
+
+The impending threat of large-scale quantum computing requires cryptographic systems that are both post-quantum secure and operationally agile. This work presents QASS (Quantum-Agile Security System), a layered hybrid architecture designed to reduce fixed attack surfaces while preserving deployability and algorithm-swapping flexibility. QASS integrates three key-source families, a quantum-guided source-selection mechanism, a hybrid derivation engine, a session ratchet, an agility-enabled encryption layer, and continuous security monitoring.
+
+The central contribution is Dynamic Source Randomization (DSR), where the active key-source combination changes per session, preventing persistent single-target attack assumptions. A second contribution is a Quantum Ratchet workflow that advances session key state via fresh randomness material and one-way derivation, improving inter-session key-state separation. The implementation is validated through full-stack integration experiments, statistical analysis, and ablation studies.
+
+Empirical results show successful end-to-end operation across all required demos, including eavesdropping-triggered critical response, cipher agility migration, and post-quantum algorithm swapping without core logic rewrites. Statistical validation reports near-uniform selector behavior under tested sessions, high key divergence across ratchet transitions, and high encryption correctness across agility modes. Ablation studies show that disabling DSR collapses combination diversity and maximizes predictability, supporting the architectural role of session-varying source selection.
+
+These findings indicate that QASS provides a practical pathway toward cryptographic agility in the quantum transition period, while identifying formal composability proofs and hardware-backed entropy pathways as the next steps for strengthening assurance guarantees.

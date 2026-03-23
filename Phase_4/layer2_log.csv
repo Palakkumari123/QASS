@@ -1,0 +1,13 @@
+session_id,seed,raw_bitstring,combination_id,selected_sources,attempts,selector_duration_ms,transpiled_depth,transpiled_ops
+demo1_session,501,001,0,qkd,1,75.32872999991014,4,"{'h': 3, 'measure': 3, 'cx': 2}"
+demo3_eve,504,010,1,kyber,2,150.5055180000454,4,"{'h': 3, 'measure': 3, 'cx': 2}"
+demo4_aes,504,010,1,kyber,1,73.4188549999999,4,"{'h': 3, 'measure': 3, 'cx': 2}"
+demo4_chacha,506,101,4,qkd+qrng,2,148.67467700014458,4,"{'h': 3, 'measure': 3, 'cx': 2}"
+demo5_kyber1024,506,101,4,qkd+qrng,1,84.44527199981167,4,"{'h': 3, 'measure': 3, 'cx': 2}"
+demo5_kyber768,507,101,4,qkd+qrng,1,76.00951199992778,4,"{'h': 3, 'measure': 3, 'cx': 2}"
+demo1_session,501,001,0,qkd,1,74.26040900008957,4,"{'h': 3, 'measure': 3, 'cx': 2}"
+demo3_eve,504,010,1,kyber,2,148.73862699960227,4,"{'h': 3, 'measure': 3, 'cx': 2}"
+demo4_aes,504,010,1,kyber,1,72.84425699981512,4,"{'h': 3, 'measure': 3, 'cx': 2}"
+demo4_chacha,506,101,4,qkd+qrng,2,147.1565259998897,4,"{'h': 3, 'measure': 3, 'cx': 2}"
+demo5_kyber1024,506,101,4,qkd+qrng,1,76.94927400007145,4,"{'h': 3, 'measure': 3, 'cx': 2}"
+demo5_kyber768,507,101,4,qkd+qrng,1,75.67838000022675,4,"{'h': 3, 'measure': 3, 'cx': 2}"

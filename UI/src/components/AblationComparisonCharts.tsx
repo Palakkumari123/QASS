@@ -89,7 +89,7 @@ export const AblationComparisonCharts: React.FC<Props> = ({ ablationData = defau
         scrollButtons="auto"
         sx={{ mb: 2, minHeight: 40, '.MuiTab-root': { minHeight: 40 } }}
       >
-        {metrics.map((m, idx) => (
+        {metrics.map((m) => (
           <Tab key={m.key} label={m.label} />
         ))}
       </Tabs>

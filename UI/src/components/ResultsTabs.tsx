@@ -44,7 +44,7 @@ export default function ResultsTabs({ tabLabels, currentTab, onTabChange, childr
           },
         }}
       >
-        {tabLabels.map((label, idx) => (
+        {tabLabels.map((label) => (
           <Tab key={label} label={label} />
         ))}
       </Tabs>
